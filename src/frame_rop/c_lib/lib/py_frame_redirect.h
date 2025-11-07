@@ -19,11 +19,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-typedef struct Py311FrameObj Py311FrameObj;
-typedef struct Py311FrameData Py311FrameData;
+#include "py_frame_3_11.h"
+#include "py_frame_3_13.h"
 
-typedef struct Py313FrameObj Py313FrameObj;
-typedef struct Py313FrameData Py313FrameData;
 
 // Alignment equivalent PyObject_HEAD
 typedef struct PyObjHead {
@@ -32,39 +30,39 @@ typedef struct PyObjHead {
 } PyObjHead;
 
 
-struct Py311FrameObj {
+struct Py3_11FrameObj {
     PyObjHead obj_h;
-    Py311FrameObj *f_back;
-    Py311FrameData *f_data;
-    void *f_trace;
+    Py3_11FrameObj* f_back;
+    Py3_11FrameData* f_data;
+    void* f_trace;
     int f_lineno;
     char f_trace_lines;
     char f_trace_opcodes;
     char f_fast_as_locals;
-    void *_f_frame_data[1];
+    void* _f_frame_data[1];
 };
 
-struct Py311FrameData {
-    void *f_func;
-    void *f_globals;
-    void *f_builtins;
-    void *f_locals;
-    void *f_code;
-    Py311FrameObj *frame_obj;
-    Py311FrameData *previous;
-    void *prev_instr;
+struct Py3_11FrameData {
+    void* f_func;
+    void* f_globals;
+    void* f_builtins;
+    void* f_locals;
+    void* f_code;
+    Py3_11FrameObj* frame_obj;
+    Py3_11FrameData* previous;
+    void* prev_instr;
     int stacktop;
     bool is_entry;
     char owner;
-    void *localsplus[1];
+    void* localsplus[1];
 };
 
 
-struct Py313FrameObj {
+struct Py3_13FrameObj {
     // TODO
 };
 
-struct Py313FrameData {
+struct Py3_13FrameData {
     // TODO
 };
 
