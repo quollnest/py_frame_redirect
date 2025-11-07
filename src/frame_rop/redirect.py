@@ -1,16 +1,35 @@
-from ctypes import cdll, c_size_t
 import inspect
+from ctypes import cdll, c_size_t
 
-lib_redirect = cdll.LoadLibrary("./py_frame_redirect.so")
+from .selector import frame_switch
 
-def redirect():
-    self_frame = inspect.currentframe()
-    src_frame = self_frame.f_back
-    targ_frame = self_frame.f_back.f_back
+def redirect(*args, target_frame = None, **kwargs):
+    '''
+        Redirect jumps back up the stack to a currently executing frame
+        This requires a guarantee that the frames that are skipped are eventually returned  
+    '''
 
-    lib_redirect.redirect_frame(c_size_t(id(self_frame)), c_size_t(id(targ_frame)))
-    return (src_frame, 12)
+    curr_frame = inspect.currentframe()
 
-def reenter(frame):
-    self_frame = inspect.currentframe()
-    lib_redirect.redirect_frame(c_size_t(id(self_frame)), c_size_t(id(frame)))
+    if target_frame is None:
+        target_frame = curr_frame.f_back.f_back
+
+    src_frame = curr_frame.f_back
+
+    frame_switch(
+        c_size_t(id(curr_frame)),
+        c_size_t(id(target_frame))
+    )
+
+    return (src_frame, args, kwargs)
+
+
+def re_enter(frame):
+    '''
+        Re-enter returns control flow 
+    '''
+    curr_frame = inspect.currentframe()
+    frame_switch(
+        c_size_t(id(curr_frame)),
+        c_size_t(id(frame))
+    )
