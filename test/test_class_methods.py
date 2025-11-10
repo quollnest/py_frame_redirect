@@ -1,8 +1,7 @@
 import unittest 
-from frame_rop.redirect import redirect, re_enter
-
 import inspect
-from functools import partial
+
+from frame_rop.redirect import redirect, re_enter
 
 class ClassReentrancyTests(unittest.TestCase):
 

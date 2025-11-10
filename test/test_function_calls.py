@@ -1,12 +1,14 @@
 import unittest 
-from frame_rop.redirect import redirect, re_enter
 
 import inspect
 from functools import partial
 
+from frame_rop.redirect import redirect, re_enter
+
+# Global testing target
 glb_target_frame = None
 
-class SimpleReentrancyTests(unittest.TestCase):
+class FunctionTests(unittest.TestCase):
 
     def test_single_return(self):
 
