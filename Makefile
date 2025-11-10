@@ -53,7 +53,7 @@ ${TARGET}: ${OBJFILES}
 	${CC} $^ ${CFLAGS} ${SHARED_OBJECT_FLAGS} -o $@ ${LIBS}
 
 
-${BUILDDIR}/%.o : ${SRCDIR}/%.c
+${BUILDDIR}/%.o : ${SRCDIR}/%.c | ${BUILDDIR}
 	${CC} $^ ${CFLAGS} -c -o $@ ${LIBS}
 
 
