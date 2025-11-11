@@ -1,7 +1,7 @@
 import unittest
 from frame_rop.redirect import redirect, re_enter
 from frame_rop.generator_headers import generator_redirect, GeneratorYield, stop_iteration
-from frame_rop.generators import redirect_wrapper_pre, redirect_wrapper_post, redirect_generator
+from frame_rop.generators import redirect_wrapper_pre, redirect_wrapper_post, redirect_generator, to_generator
 
 import inspect
 
@@ -295,8 +295,138 @@ class GeneratorTests(unittest.TestCase):
         assert len(lst) == val // 2 
 
 
+    def test_redirect_wrapper_post(self):
+        '''
+            Tests building redirects with wrappers
+        '''
+        def _foo(bar, value):
+            for i in range(value):
+                value = bar(value)
+            return value
+
+        def bar(value):
+            return value + 1
+
+        def simple_foo_generator(val):
+            target_frame = inspect.currentframe()
+
+            _bar = redirect_wrapper_post(bar, target_frame)
+            obj = _foo(_bar, val)
+
+            while not stop_iteration(obj):
+                cmp = obj.get_return_values()[0]
+                yield cmp
+                obj = obj.re_enter()
+            return
+
+        val = 5
+        lst = []
+        for cmp in simple_foo_generator(val):
+            val += 1
+            assert cmp[0] == val
+            lst.append(cmp[0])
+
+        assert len(lst) == val // 2 
 
 
+    def test_local_to_generator(self):
+        '''
+            Tests building redirects with wrappers
+        '''
+        class Tst:
+            @staticmethod
+            def bar(value):
+                return value + 1
+           
+        def foo(value):
+            for i in range(value):
+                value = Tst.bar(value)
+            return value
+
+        def hooking_function(frame):
+            old = Tst.bar
+            Tst.bar = redirect_wrapper_pre(old, target_frame=frame)
+            return old
+
+        def unhooking_function(obj):
+            Tst.bar = obj
+
+        def local_to_generator(
+            invoke_fn,
+            hooking_fn,
+            *args,
+            unhooking_fn = None,
+             **kwargs):
+            '''
+                :: invoke_fn : callable :: Entrypoint
+                :: hooking_fn: callable :: Single argument 
+                 function comprised of the target stack frame 
+                 may optinally return arguments for unhooking
+                :: unhooking_fn : callable :: Single argument 
+                 function for unhooking the frame rop 
+            '''
+            target_frame = inspect.currentframe()
+            unhook_data = hooking_fn(target_frame)
+           
+            obj = invoke_fn(args[0]) 
+            while not stop_iteration(obj):
+                values = obj.get_return_values()
+                yield values
+                obj = obj.re_enter() 
+            unhooking_fn(unhook_data)
+            return
+
+        val = 5
+        lst = []
+        for cmp in local_to_generator(foo, 
+                hooking_function,
+                val,
+                unhooking_fn=unhooking_function
+            ):
+            assert cmp[0][0] == val
+            lst.append(cmp[0][0])
+            val += 1
+
+        assert len(lst) == val // 2 
+
+    def test_to_generator(self):
+        '''
+            Tests building redirects with wrappers
+        '''
+        class Tst:
+            @staticmethod
+            def bar(value):
+                return value + 1
+           
+        def foo(value):
+            for i in range(value):
+                value = Tst.bar(value)
+            return value
+
+        def hooking_function(frame):
+            old = Tst.bar
+            Tst.bar = redirect_wrapper_pre(old, target_frame=frame)
+            return old
+
+        def unhooking_function(obj):
+            Tst.bar = obj
+
+        def foo_wrapper(args, kwargs):
+            return foo(args[0])
+
+        val = 5
+        lst = []
+        for cmp in to_generator(
+                foo_wrapper, 
+                hooking_function,
+                val,
+                unhooking_fn=unhooking_function
+            ):
+            assert cmp[0][0] == val
+            lst.append(cmp[0][0])
+            val += 1
+
+        assert len(lst) == val // 2 
 
 
 if __name__ == '__main__':
@@ -308,6 +438,8 @@ if __name__ == '__main__':
     cl.test_looping_over_generator()
     cl.test_looping_within_generator()
     cl.test_redirect_wrapper_pre()
+    cl.test_redirect_wrapper_post()
+
 
     #cl.test_foo_generator()
     #cl.test_internal_methods()
