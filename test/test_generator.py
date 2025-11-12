@@ -428,6 +428,94 @@ class GeneratorTests(unittest.TestCase):
 
         assert len(lst) == val // 2 
 
+    def test_to_generator_class_method(self):
+        '''
+            Tests building redirects with wrappers
+            This case works on a methodtype of an instance of a class 
+        '''
+        class Tst:
+            def __init__(self):
+                self.values = []
+
+            def bar(self, value):
+                self.values.append(value)
+           
+        def foo(value):
+            obj = Tst()
+            for i in range(value):
+                obj.bar(i)
+            return
+
+        def hooking_function(frame):
+            old = Tst.bar
+            Tst.bar = redirect_wrapper_pre(old, target_frame=frame)
+            return old
+
+        def unhooking_function(obj):
+            Tst.bar = obj
+
+        def foo_wrapper(args, kwargs):
+            return foo(args[0])
+
+        val = 5
+        lst = []
+        for i, cmp in enumerate(to_generator(
+                foo_wrapper, 
+                hooking_function,
+                val,
+                unhooking_fn=unhooking_function
+            )):
+            assert cmp[0][1] == i 
+            lst.append(cmp[0][1])
+
+        assert len(lst) == val 
+
+
+    def test_to_generator_handler_fn(self):
+        '''
+            Tests building redirects with wrappers
+            This case works on a methodtype of an instance of a class 
+        '''
+        class Tst:
+            def __init__(self):
+                self.values = []
+
+            def bar(self, value):
+                self.values.append(value)
+           
+        def foo(value):
+            obj = Tst()
+            for i in range(value):
+                obj.bar(i)
+            return
+
+        def hooking_function(frame):
+            old = Tst.bar
+            Tst.bar = redirect_wrapper_pre(old, target_frame=frame)
+            return old
+
+        def unhooking_function(obj):
+            Tst.bar = obj
+
+        def foo_wrapper(args, kwargs):
+            return foo(args[0])
+        
+        def handler(args):
+            return args[0][1]
+
+        val = 5
+        lst = []
+        for i, cmp in enumerate(to_generator(
+                foo_wrapper, 
+                hooking_function,
+                val,
+                unhooking_fn=unhooking_function,
+                handler_fn = handler
+            )):
+            assert cmp == i 
+            lst.append(cmp)
+
+        assert len(lst) == val 
 
 if __name__ == '__main__':
     cl = GeneratorTests()
@@ -439,9 +527,5 @@ if __name__ == '__main__':
     cl.test_looping_within_generator()
     cl.test_redirect_wrapper_pre()
     cl.test_redirect_wrapper_post()
-
-
-    #cl.test_foo_generator()
-    #cl.test_internal_methods()
-
-    #cl.test_class_generator_hook()
+    cl.test_to_generator()
+    cl.test_to_generator_class_method()

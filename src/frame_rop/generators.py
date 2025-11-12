@@ -86,6 +86,7 @@ def to_generator(
     hooking_fn,
     *args,
     unhooking_fn = None,
+    handler_fn = None,
      **kwargs):
     '''
         :: invoke_fn : callable :: Entrypoint
@@ -101,6 +102,15 @@ def to_generator(
     obj = invoke_fn(args, kwargs) 
     while not stop_iteration(obj):
         values = obj.get_return_values()
-        yield values
+
+        # Argument handler function
+        if handler_fn is not None:
+            yield handler_fn(values)
+        else:
+            yield values
         obj = obj.re_enter() 
+
+    # Reset function hooks
+    if unhooking_fn is not None:
+        unhooking_fn(unhook_data)
     return
