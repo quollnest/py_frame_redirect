@@ -53,13 +53,24 @@ ${TARGET}: ${OBJFILES}
 	${CC} $^ ${CFLAGS} ${SHARED_OBJECT_FLAGS} -o $@ ${LIBS}
 
 
-${BUILDDIR}/%.o : ${SRCDIR}/%.c
-	${CC} $^ ${CFLAGS} -c -o $@ ${LIBS}
+${BUILDDIR}/%.o : ${SRCDIR}/%.c ${BUILDDIR}
+	${CC} $< ${CFLAGS} -c -o $@ ${LIBS}
 
 
 build: ${BUILDDIR} ${OBJFILES}
 
-clean: 
+
+test: ${OBJFILES} check_install
+	pytest
+
+
+# Ensure the package has been installed
+# TEMP: At present, does not automatically install python package
+check_install:
+	pip list | grep "frame_rop"
+
+
+clean:
 	rm -rf ${BUILDDIR}
 	rm -rf ${TARGET}
 
